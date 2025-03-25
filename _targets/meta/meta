@@ -1,0 +1,8 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+parse_scorpion_xml_url_metadata|function|ad2d4973478c1afa|||||||||||||||
+fetch_scorpion_sitemap|function|2a33ac5f82e992ed|||||||||||||||
+scorpio_site_map|stem|4f770c76235e68e1|61f41f3b2405d5ca|22d8a051ea9ec997|-2049706488||t20172.1761615031s|s110013b|110013|rds|local|vector|||286.174||
+parse_scorpion_xml_url_metadata|function|8195bba6753f04e8
+.Random.seed|object|dfbbffb85eb69b21
+zoom_in_product_urls|function|c34a9408981ca4a9
+fetch_scorpion_sitemap|function|5a95236cc2539fb2
