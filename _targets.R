@@ -10,7 +10,10 @@ library(targets)
 # Set target options:
 tar_option_set(
   packages = c("tibble",
+               "chromote",
                "rvest",
+               "tidyr",
+               "stringr",
                "dplyr",
                "furrr",
                "purrr") # Packages that your targets need for their tasks.
@@ -51,7 +54,7 @@ tar_option_set(
 # Run the R scripts in the R/ folder with your custom functions:
 tar_source()
 # tar_source("other_functions.R") # Source other scripts as needed.
-
+Sys.setenv(CHROMOTE_CHROME = "/usr/bin/brave-browser")
 # Replace the target list below with your own:
 list(
   tar_target(

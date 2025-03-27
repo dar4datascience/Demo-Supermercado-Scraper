@@ -1,7 +1,9 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
-parse_scorpion_xml_url_metadata|function|c532f604fb67956e
-.Random.seed|object|17b475bbe21d4d7b
-zoom_in_product_urls|function|05892ccd4692b4c0
-fetch_scorpion_sitemap|function|a0a4ace27d9f912f
 scorpio_site_map|stem|7d2fee2207a7bc69|61f41f3b2405d5ca|c4ba9aef0594a006|-2049706488||t20172.2351977115s|s87779b|87779|rds|local|vector|||220.342||
 scorpio_select_product_urls|stem|456e3a50b8bc6286|7f97875248f7f41e|c75f87f3686b14bb|-835602709||t20172.2351984175s|s76908b|76908|rds|local|vector|||0.008||
+parse_scorpion_xml_url_metadata|function|c532f604fb67956e
+.Random.seed|object|cf7c6139aed2cc7a
+scrape_product_price_data|function|240b987c82244b01
+zoom_in_product_urls|function|05892ccd4692b4c0
+check_product_availability|function|240b987c82244b01
+fetch_scorpion_sitemap|function|a0a4ace27d9f912f
