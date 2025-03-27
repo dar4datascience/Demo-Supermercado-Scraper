@@ -5,6 +5,7 @@
 
 # Load packages required to define the pipeline:
 library(targets)
+library(progressr)
 # library(tarchetypes) # Load other packages as needed.
 
 # Set target options:
@@ -13,6 +14,7 @@ tar_option_set(
                "chromote",
                "rvest",
                "tidyr",
+               "progressr",
                "stringr",
                "dplyr",
                "furrr",
@@ -53,8 +55,11 @@ tar_option_set(
 
 # Run the R scripts in the R/ folder with your custom functions:
 tar_source()
+reticulate::source_python('Python/live_scraping_utils.py')
+# handlers(handler_txtprogressbar(char = cli::col_red(cli::symbol$heart)))
 # tar_source("other_functions.R") # Source other scripts as needed.
-Sys.setenv(CHROMOTE_CHROME = "/usr/bin/brave-browser")
+# chromote is fine and well but inrealible, might need to move to playwright
+#Sys.setenv(CHROMOTE_CHROME = "/usr/bin/brave-browser")
 # Replace the target list below with your own:
 list(
   tar_target(
@@ -63,7 +68,11 @@ list(
     # format = "qs" # Efficient storage for general data objects.
   ),
   tar_target(
-    name = scorpio_select_product_urls,
+    name = aug_scorpio_zoomed_product_urls,
     command = zoom_in_product_urls(scorpio_site_map)
+  ),
+  tar_target(
+    name = scorpio_product_price_information,
+    command = fetch_product_price_information(aug_scorpio_zoomed_product_urls)
   )
 )

@@ -1,3 +1,4 @@
+
 parse_scorpion_xml_url_metadata <- function(scorpion_site_metadata){
 
   url_attributes <- c("loc",
@@ -52,19 +53,65 @@ fetch_scorpion_sitemap <- function(date_today){
 }
 
 
+progressive_py_check_product_availability <- function(url_vector) {
+  # # Set up the progressor
+  # p <- progressr::progressor(along = url_vector)
+  # 
+  # # Initialize the vector to store the results
+  # product_price_information <- logical(length(url_vector))  # Assuming boolean results
+  
+  # Set a "plan" for how the code should run.
+  
+  p <- progressor(steps = length(url_vector))
+
+  product_price_information <- future_map(url_vector,
+                                          py_check_product_availability,
+                                          p = p)
+  
+  # # Iterate over the URLs and apply the function
+  # for (kk in seq_along(url_vector)) {
+  #   result <- py_check_product_availability(url_vector[kk])  # Assuming this is how the function is used
+  #   product_price_information[kk] <- result
+  #   
+  #   # Update progress
+  #   p()
+  # }
+  # 
+  return(product_price_information)
+}
+
 
 zoom_in_product_urls <- function(scorpion_sitemap){
   
-  scorpion_sitemap |> 
+  scorpio_zoomed_product_urls <- scorpion_sitemap |> 
     filter(
       !is.na(changefreq), # will also return /search by department results
       priority == "1.0" # some pages dont return anything but are still listed... why?
-    ) |> 
+    ) 
+    
+  
+  #plan(multisession, workers = 4)
+  
+  #with_progress({
+  
+  aug_scorpio_zoomed_product_urls <-  scorpio_zoomed_product_urls |> 
     mutate(
-      is_available = loc |> 
-        map_lgl(
-          ~ check_product_availability(.x)
-        )
+    is_available =  check_multiple_product_availabilities(loc)
+  )
+
+  #})
+    
+return(aug_scorpio_zoomed_product_urls)
+  
+}
+
+fetch_product_price_information <- function(aug_scorpio_zoomed_product_urls){
+  
+  # COULD OPTIMZE BY UNIFYING CHECKING IF ITS AVAILABLE WITH FETCHING THE INFORMATION
+  aug_scorpio_zoomed_product_urls |> 
+    filter(is_available == TRUE) |> 
+    mutate(
+      price_info =  scrape_multiple_product_price_data(loc)
     )
   
 }
@@ -85,11 +132,19 @@ check_product_availability <- function(product_info_url){
   
   page <- read_html_live(product_info_url)
   
-  if (is.na(page)) {
-    return(FALSE)  # Return FALSE if the page could not be loaded
-  }
+  cli::cli_inform(
+    glue::glue(
+      "Now processing: {product_info_url}"
+    )
+  )
   
-  page_only_404_title <- page |> html_elements("h3.title") |> html_text2()
+  # if (is.na(page)) {
+  #   return(FALSE)  # Return FALSE if the page could not be loaded
+  # }
+  
+  page_only_404_title <- page |>
+    html_elements("h3.title") |>
+    html_text2()
   
   not_found <- page_only_404_title == "Error 404"
   
