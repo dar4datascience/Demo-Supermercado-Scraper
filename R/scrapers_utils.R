@@ -3,9 +3,9 @@ parse_scorpion_xml_url_metadata <- function(scorpion_site_metadata){
   url_attributes <- c("loc",
                       "lastmod", # last time sku changed
                       "changefreq",
-                      "priority", # nose
-                      "pagemap",
-                      "image"
+                      "priority" # nose
+                      #"pagemap",
+                      #"image"
                       )
   
     scorpion_site_url_metadata <- url_attributes |> 
@@ -21,7 +21,11 @@ parse_scorpion_xml_url_metadata <- function(scorpion_site_metadata){
     
     augmented_scorpion_site_url_metadata <- scorpion_site_url_metadata |> 
       mutate(
-        page_name = basename(loc)
+        page_name = basename(loc),
+        image_name = scorpion_site_metadata |> 
+          html_element("image") |> 
+          html_element('title') |> 
+          html_text2()
       )
       
       
@@ -53,8 +57,8 @@ zoom_in_product_urls <- function(scorpion_sitemap){
   
   scorpion_sitemap |> 
     filter(
-      !is.null(changefreq), # will also return /search by department results
-      priority == 1 # some pages dont return anything but are still listed... why?
+      !is.na(changefreq), # will also return /search by department results
+      priority == "1.0" # some pages dont return anything but are still listed... why?
     )
   
 }
