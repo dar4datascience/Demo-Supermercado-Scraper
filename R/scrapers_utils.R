@@ -36,12 +36,12 @@ parse_scorpion_xml_url_metadata <- function(scorpion_site_metadata){
 
 # might want to leverage llm to catalog url type or if something is missing the ist not a product
 
-fetch_scorpion_sitemap <- function(date_today){
+fetch_scorpio_site_map <- function(date_today){
   # robots txt has no guard-rails: https://www.scorpion.com.mx/robots.txt
   
   #plan(multisession, workers = 4)
   
-  scorpion_sitemap <- read_html("https://www.scorpion.com.mx/pub/sitemaps/sitemap.xml") |> 
+  scorpio_site_map <- read_html("https://www.scorpion.com.mx/pub/sitemaps/sitemap.xml") |> 
     html_elements("url") |> 
     map(
       ~ parse_scorpion_xml_url_metadata(.x)
@@ -49,7 +49,7 @@ fetch_scorpion_sitemap <- function(date_today){
     list_rbind()
   
   
-  return(scorpion_sitemap)
+  return(scorpio_site_map)
 }
 
 
@@ -81,9 +81,9 @@ progressive_py_check_product_availability <- function(url_vector) {
 }
 
 
-zoom_in_product_urls <- function(scorpion_sitemap){
+zoom_in_product_urls <- function(scorpio_site_map){
   
-  scorpio_zoomed_product_urls <- scorpion_sitemap |> 
+  scorpio_zoomed_product_urls <- scorpio_site_map |> 
     filter(
       !is.na(changefreq), # will also return /search by department results
       priority == "1.0" # some pages dont return anything but are still listed... why?
@@ -94,102 +94,50 @@ zoom_in_product_urls <- function(scorpion_sitemap){
   
   #with_progress({
   
-  aug_scorpio_zoomed_product_urls <-  scorpio_zoomed_product_urls |> 
-    mutate(
-    is_available =  check_multiple_product_availabilities(loc)
-  )
+  zoom_product_availability <- scorpio_zoomed_product_urls$loc |> 
+    check_multiple_product_availabilities()
+  
+
 
   #})
     
-return(aug_scorpio_zoomed_product_urls)
+return(zoom_product_availability)
   
+}
+
+augment_product_availability <- function(scorpio_site_map, zoom_product_availability) {
+  
+  scorpio_zoomed_product_urls <- scorpio_site_map |> 
+    filter(
+      !is.na(changefreq), # will also return /search by department results
+      priority == "1.0"   # some pages don't return anything but are still listed... why?
+    ) 
+  
+  # Correct the mapping over the list
+  product_availability_df <- map_df(zoom_product_availability, ~ as_tibble(setNames(.x, c("url", "is_available"))))
+  
+  aug_scorpio_zoomed_product_urls <- scorpio_zoomed_product_urls |> 
+    left_join(product_availability_df, join_by(loc == url))
+  
+  return(aug_scorpio_zoomed_product_urls)
 }
 
 fetch_product_price_information <- function(aug_scorpio_zoomed_product_urls){
   
   # COULD OPTIMZE BY UNIFYING CHECKING IF ITS AVAILABLE WITH FETCHING THE INFORMATION
+ product_price_information_url <- aug_scorpio_zoomed_product_urls |> 
+   filter(is_available == TRUE) |> 
+   pull(loc) 
+ 
+ 
+ product_price_information <- scrape_multiple_product_price_data(product_price_information_url)
+  
+  return(product_price_information)
+}
+
+
+augment_product_price <- function(aug_scorpio_zoomed_product_urls, scorpio_product_price_information) {
+  
   aug_scorpio_zoomed_product_urls |> 
-    filter(is_available == TRUE) |> 
-    mutate(
-      price_info =  scrape_multiple_product_price_data(loc)
-    )
-  
-}
-
-
-#' Check Product Availability
-#' 
-#' This function checks if a product is available on a given URL.
-#' It scrapes the webpage and looks for an "Error 404" message.
-#' 
-#' @param product_info_url A character string containing the URL of the product page.
-#' 
-#' @return A logical value indicating whether the product is available (TRUE) or not (FALSE).
-#' 
-#' @examples
-#' check_product_availability("https://example.com/product1")
-check_product_availability <- function(product_info_url){
-  
-  page <- read_html_live(product_info_url)
-  
-  cli::cli_inform(
-    glue::glue(
-      "Now processing: {product_info_url}"
-    )
-  )
-  
-  # if (is.na(page)) {
-  #   return(FALSE)  # Return FALSE if the page could not be loaded
-  # }
-  
-  page_only_404_title <- page |>
-    html_elements("h3.title") |>
-    html_text2()
-  
-  not_found <- page_only_404_title == "Error 404"
-  
-  return(!any(not_found))  # TRUE if available, FALSE if not available
-}
-
-
-scrape_product_price_data <- function(product_info_url){
-  
-  page <- read_html_live(product_info_url)
-  
-  product_info_prices <- page |> 
-    html_element("div.product-info-price") 
-  
-  precio_minorista <- product_info_prices |> 
-    html_element("span.active.prodPiece") 
-  
-  tbl_precio_minorista <- tibble(
-    unidad = precio_minorista |> 
-      html_element("h4") |> 
-      html_text2(),
-    precio = precio_minorista |> 
-      html_element("span.price") |> 
-      html_text2(),
-    piezas_requeridas = "1"
-  )
-  
-  precios_mayoristas <- product_info_prices |> 
-    html_elements("div.p-20-related") |> 
-    map(
-      ~ tibble(
-        piezas_requeridas = html_element(.x, "button.prodBox") |> 
-          html_attr("data-pieze"),
-        precio = html_element(.x, "div.price") |> 
-          html_text2() 
-      )
-    ) 
-  
-  
-  product_prices_tbl <- tbl_precio_minorista |> 
-    bind_rows(precios_mayoristas) |> 
-    fill(unidad, .direction = "down") |> 
-    mutate(
-      precio = precio |> 
-        str_extract("\\d+(\\.\\d+)?")
-    )
-  
+    filter(is_available == TRUE)
 }

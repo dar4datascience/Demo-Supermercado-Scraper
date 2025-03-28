@@ -64,15 +64,23 @@ reticulate::source_python('Python/live_scraping_utils.py')
 list(
   tar_target(
     name = scorpio_site_map,
-    command = fetch_scorpion_sitemap(Sys.Date())
+    command = fetch_scorpio_site_map(Sys.Date())
     # format = "qs" # Efficient storage for general data objects.
   ),
   tar_target(
-    name = aug_scorpio_zoomed_product_urls,
+    name = zoomed_product_availability,#aug_scorpio_zoomed_product_urls,
     command = zoom_in_product_urls(scorpio_site_map)
+  ),
+  tar_target(
+    name = aug_scorpio_zoomed_product_urls,
+    command = augment_product_availability(scorpio_site_map, zoomed_product_availability)
   ),
   tar_target(
     name = scorpio_product_price_information,
     command = fetch_product_price_information(aug_scorpio_zoomed_product_urls)
+  ),
+  tar_target(
+    name = scorpion_price_information_v1,
+    command = augment_product_price(aug_scorpio_zoomed_product_urls, scorpio_product_price_information)
   )
 )
