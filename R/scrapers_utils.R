@@ -135,9 +135,67 @@ fetch_product_price_information <- function(aug_scorpio_zoomed_product_urls){
   return(product_price_information)
 }
 
+custom_name_repair <- function(names) {
+  sub("^prices\\$", "", names)  # Remove "prices$" prefix from column names
+}
+
+transform_to_dataframe <- function(scorpio_product_record){
+  
+  tibble(
+    url = scorpio_product_record$url,
+    prices = scorpio_product_record$price |>
+      map(as_tibble) |>
+      list_rbind(),
+    logs = scorpio_product_record$logs |> 
+         glue_collapse(sep = '\n')
+        
+      
+  ) 
+  
+}
+
 
 augment_product_price <- function(aug_scorpio_zoomed_product_urls, scorpio_product_price_information) {
   
-  aug_scorpio_zoomed_product_urls |> 
-    filter(is_available == TRUE)
+  expanded_scorpio_product_price_information <- scorpio_product_price_information |> 
+    map(
+      ~ transform_to_dataframe(.x)
+    ) |> 
+    list_rbind() |> 
+    group_by(url, logs) |> 
+    mutate(
+      prices = prices |> 
+            fill(unidad, .direction = "down")
+    ) |> 
+    nest(prices = prices)
+  
+  # there are missing producsts cause we had 938 and 896 have returned
+  
+  # this returns all urls with the logs
+  all_products <- scorpio_product_price_information |> 
+    map(
+    \(x)  tibble(
+      url = pluck(x, "url"),
+      logs = pluck(x, "logs")
+    ) |> 
+      mutate(
+        logs = logs |> 
+          glue_collapse(sep = '\n')
+      )
+    ) |> 
+    list_rbind() 
+
+  augmented_product_price <- aug_scorpio_zoomed_product_urls |> 
+    filter(is_available == TRUE) |> 
+    left_join(expanded_scorpio_product_price_information,
+              join_by(loc == url)) |> 
+    full_join(all_products,
+              join_by(loc == url)) |> 
+    mutate(
+      logs = coalesce(logs.x, logs.y)
+    ) |> 
+    select(!c(logs.x, logs.y)) |> 
+    distinct()
+  
+  return(augmented_product_price)
 }

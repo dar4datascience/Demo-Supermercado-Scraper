@@ -58,7 +58,8 @@ def py_scrape_product_price_data(product_info_url):
                 for index, precio_box in enumerate(precios_mayoristas):
                     logs.append(f"Processing wholesale price box {index + 1}")
 
-                    piezas_requeridas = precio_box.locator("span.prodBox").get_attribute("data-pieze")
+                    piezas_requeridas = precio_box.locator("span.prodBox").or_("button.prodBox").get_attribute("data-pieze")
+
                     if piezas_requeridas is None:
                         logs.append(f"Warning: piezas_requeridas not found in box {index + 1}")
                         piezas_requeridas = "Unknown"
@@ -90,7 +91,7 @@ def py_scrape_product_price_data(product_info_url):
                     page.wait_for_timeout(5000)
                 else:
                     logs.append("Max retries reached. Returning empty list.")
-                    return {"prices": [], "logs": logs}
+                    return {"url":product_info_url, "prices": [], "logs": logs}
 
         browser.close()
 

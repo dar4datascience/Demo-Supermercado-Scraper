@@ -11,10 +11,9 @@ library(progressr)
 # Set target options:
 tar_option_set(
   packages = c("tibble",
-               "chromote",
                "rvest",
                "tidyr",
-               "progressr",
+               "glue",
                "stringr",
                "dplyr",
                "furrr",
@@ -77,7 +76,8 @@ list(
   ),
   tar_target(
     name = scorpio_product_price_information,
-    command = fetch_product_price_information(aug_scorpio_zoomed_product_urls)
+    command = fetch_product_price_information(aug_scorpio_zoomed_product_urls),
+    cue = tar_cue("thorough")
   ),
   tar_target(
     name = scorpion_price_information_v1,
