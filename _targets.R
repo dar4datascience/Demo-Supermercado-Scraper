@@ -17,9 +17,10 @@ tar_option_set(
                "stringr",
                "dplyr",
                "furrr",
-               "purrr") # Packages that your targets need for their tasks.
+               "purrr"), # Packages that your targets need for their tasks.
   # format = "qs", # Optionally set the default storage format. qs is fast.
   #
+  cue = tar_cue("always"), #always
   # Pipelines that take a long time to run may benefit from
   # optional distributed computing. To use this capability
   # in tar_make(), supply a {crew} controller
@@ -77,7 +78,7 @@ list(
   tar_target(
     name = scorpio_product_price_information,
     command = fetch_product_price_information(aug_scorpio_zoomed_product_urls),
-    cue = tar_cue("thorough")
+    cue = tar_cue("always")
   ),
   tar_target(
     name = scorpion_price_information_v1,

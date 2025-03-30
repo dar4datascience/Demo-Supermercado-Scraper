@@ -167,7 +167,10 @@ augment_product_price <- function(aug_scorpio_zoomed_product_urls, scorpio_produ
       prices = prices |> 
             fill(unidad, .direction = "down")
     ) |> 
-    nest(prices = prices)
+    nest(prices = prices) |> 
+    mutate(
+      has_prices = if_else(is.null(prices), FALSE, TRUE)
+    )
   
   # there are missing producsts cause we had 938 and 896 have returned
   
@@ -195,7 +198,10 @@ augment_product_price <- function(aug_scorpio_zoomed_product_urls, scorpio_produ
       logs = coalesce(logs.x, logs.y)
     ) |> 
     select(!c(logs.x, logs.y)) |> 
-    distinct()
+    distinct() |> 
+    mutate(
+      has_prices = if_else(is.na(has_prices), FALSE, TRUE)
+    )
   
   return(augmented_product_price)
 }
